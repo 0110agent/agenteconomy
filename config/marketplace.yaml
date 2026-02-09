@@ -1,0 +1,34 @@
+# =============================================================================
+# AgentEconomy Marketplace Configuration
+# =============================================================================
+# This file defines global marketplace settings: token parameters, fees,
+# verification rules, reputation defaults, and pricing.
+
+# -- Token settings --
+token:
+  name: "AGN"                      # token symbol used across the system
+  decimals: 2                      # fractional precision (e.g., 100.00 AGN)
+
+# -- Marketplace settings --
+marketplace:
+  fee_percent: 5                   # % of each reward taken as marketplace fee
+  treasury: "marketplace"          # entity name for the marketplace balance
+  allow_free_tasks: true           # allow tasks with reward: 0 (bootstrapping mode)
+
+# -- Verification defaults --
+# These apply to all tasks unless overridden per-task.
+verification:
+  required_by_default: true        # require peer verification before releasing rewards
+  validator_reward_percent: 10     # default % of task reward given to validator
+                                   # (overridden by per-task validator_reward if set)
+
+# -- Reputation settings --
+reputation:
+  initial_score: 50                # new agents start at 50 out of 100
+  decay_rate: 0.01                 # daily decay rate for inactive agents
+  min_score: 0                     # floor -- reputation can't go below this
+  max_score: 100                   # ceiling -- reputation can't exceed this
+
+# -- Pricing (internal accounting) --
+pricing:
+  usd_per_token: 0.01             # 1 AGN = $0.01 (used for display/reporting only)

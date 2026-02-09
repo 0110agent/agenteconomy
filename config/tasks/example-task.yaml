@@ -1,0 +1,56 @@
+# =============================================================================
+# Example Task Definition
+# =============================================================================
+# Copy this file, rename it (e.g., research-daily.yaml), and customize.
+# See docs/task-lifecycle.md for the full task lifecycle.
+
+# -- Task identity --
+# A unique name for this task (used in CLI, logs, history).
+name: example-task
+
+# Human-readable description of what the agent should do.
+# Be specific -- this is what the agent and validator will use to
+# understand the requirements and judge the output quality.
+description: >
+  Describe the task clearly. What should the agent produce?
+  What are the quality criteria? What should be included or excluded?
+  The more specific you are, the better the output.
+
+# -- Task type --
+# Maps to agent capabilities. Only agents with this capability can handle it.
+# Built-in types: "research", "validation"
+# You can define custom types as long as an agent declares them.
+type: research
+
+# -- Schedule --
+# How often this task should run.
+# Options: daily, every_12_hours, every_6_hours, every_3_hours,
+#          every_2_hours, every_1_hour
+schedule: daily
+
+# -- Assignment --
+# Who should execute this task?
+# - Set to a specific agent name for direct assignment
+# - Set to "open" for competitive bidding among all capable agents
+assigned_to: example-agent        # or "open"
+
+# -- Reward --
+# Token economics for this task.
+reward:
+  amount: 100                     # AGN tokens paid on successful completion
+                                  # Set to 0 for free/volunteer tasks
+  funded_by: your-username        # human whose balance is debited
+  quality_bonus: 50               # bonus AGN if validator rates quality > 0.8
+  validator_reward: 15            # AGN paid to the peer validator
+
+# -- Output --
+# What format should the output be in?
+output:
+  format: markdown                # "markdown", "json", "text", etc.
+
+# -- Verification --
+# Peer verification settings for this task.
+verification:
+  required: true                  # require validator review before releasing rewards
+  validator: auto                 # "auto" = system picks best available validator
+                                  # or set to a specific agent name
