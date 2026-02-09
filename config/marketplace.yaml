@@ -2,7 +2,7 @@
 # AgentEconomy Marketplace Configuration
 # =============================================================================
 # This file defines global marketplace settings: token parameters, fees,
-# verification rules, reputation defaults, and pricing.
+# verification rules, reputation defaults, staking, and anti-abuse controls.
 
 # -- Token settings --
 token:
@@ -15,6 +15,17 @@ marketplace:
   treasury: "marketplace"          # entity name for the marketplace balance
   allow_free_tasks: true           # allow tasks with reward: 0 (bootstrapping mode)
 
+# -- Trust model --
+# MVP runs as a SINGLE-NODE COORDINATOR: one process owns all state.
+# This is NOT a decentralized ledger. There is no multi-party consensus.
+# All balances, escrow, and reputation live in local JSON files operated
+# by the coordinator. Future versions may add hosted API or on-chain settlement.
+trust:
+  mode: "coordinator"              # "coordinator" (MVP) | future: "hosted", "onchain"
+  ledger_integrity: true           # enable SHA-256 hash chaining on transaction ledger
+  # When ledger_integrity is true, every Transaction includes a prev_hash field
+  # linking it to the previous entry. Tampering with any entry breaks the chain.
+
 # -- Verification defaults --
 # These apply to all tasks unless overridden per-task.
 verification:
@@ -22,12 +33,88 @@ verification:
   validator_reward_percent: 10     # default % of task reward given to validator
                                    # (overridden by per-task validator_reward if set)
 
+# -- Validator staking --
+# Validators must stake tokens to be eligible for verification work.
+# Staking prevents rubber-stamping (slashing) and grief attacks.
+staking:
+  validator_stake_required: 50     # AGN validators must lock to be eligible
+  slash_percent: 20                # % of stake slashed on misaligned verification
+  slash_trigger: "human_rating"    # what triggers a slash check:
+                                   #   "human_rating" = if human rates agent poorly
+                                   #   after validator approved, or rates well after
+                                   #   validator rejected, validator gets slashed
+  cooldown_after_slash_hours: 24   # validator can't verify for N hours after slash
+
+# -- Validator payment --
+# Validators are ALWAYS paid a base reward for completing a review,
+# regardless of whether they approve or reject.
+# Bonus is awarded if their verdict aligns with the eventual human rating.
+validator_payment:
+  base_percent: 70                 # 70% of validator_reward paid immediately on review
+  alignment_bonus_percent: 30      # 30% bonus if verdict aligns with human rating
+  # Example: task has validator_reward: 15 AGN
+  #   Validator completes review: receives 10.5 AGN (base)
+  #   Human rates later: if aligned, validator gets +4.5 AGN (bonus)
+  #   If misaligned: no bonus, plus possible stake slash
+
 # -- Reputation settings --
 reputation:
   initial_score: 50                # new agents start at 50 out of 100
   decay_rate: 0.01                 # daily decay rate for inactive agents
   min_score: 0                     # floor -- reputation can't go below this
   max_score: 100                   # ceiling -- reputation can't exceed this
+  # Weight of each reputation signal (must sum to 1.0)
+  weights:
+    human_rating: 0.25             # reduced from 0.40 to limit manipulation
+    verification_quality: 0.30     # validator's quality score
+    task_success: 0.25             # binary success/fail signal
+    time_decay: 0.10               # penalizes inactivity
+    completion_volume: 0.10        # verifiable track record (tasks completed)
+  # Per-identity caps to prevent single funder from dominating reputation
+  human_rating_cap:
+    max_ratings_per_funder: 5      # max ratings from same human counted per agent
+    min_unique_funders: 3          # need ratings from 3+ distinct funders for full weight
+
+# -- Sybil protection & free task limits --
+sybil:
+  free_task_rate_limit:
+    max_per_agent_per_day: 3       # max free tasks any single agent can do per day
+    max_per_agent_per_week: 10     # weekly cap
+  free_task_reputation_multiplier: 0.5  # reputation gains from free tasks grow at 50% rate
+  min_paid_tasks_for_bidding: 3    # agents must complete N paid tasks before bidding on open tasks
+  new_agent_reputation_growth_cap: 2.0  # max rep points gained per task for first 10 tasks
+
+# -- Bidding settings --
+bidding:
+  mode: "reputation_weighted"      # "reputation_weighted" (default) | "quality_first"
+  min_quality_threshold: 0.6       # agents below this avg quality can't bid on open tasks
+  min_reputation_for_open: 30      # minimum reputation score to bid on open tasks
+  quality_first_categories: []     # task types where quality_first mode is forced
+                                   # e.g., ["code_review", "security_audit"]
+
+# -- Provenance settings --
+provenance:
+  max_depth: 3                     # max lineage depth for royalty cascade
+  royalty_decay_per_level: 0.5     # each level gets 50% of previous level's share
+  max_royalty_age_days: 365        # royalties expire after 1 year from fork date
+  # Royalties only flow when the child agent demonstrably reuses parent components.
+  # In MVP, this is tracked via the provenance.parent declaration.
+  # Future: hash-based component matching to verify reuse.
+
+# -- Proof of Contribution --
+proof_of_contribution:
+  min_pr_additions: 50             # minimum lines added in the merged PR
+  require_tests: true              # PR must include test files
+  require_review_approval: true    # PR must have at least 1 approving review
+
+# -- Secrets management --
+# Agent YAML files may reference secrets. In MVP, secrets are loaded from
+# environment variables or a local .secrets.yaml file (gitignored).
+# Agent API keys are NEVER logged, stored in the ledger, or passed between agents.
+secrets:
+  source: "env_or_file"           # "env_or_file" (MVP) | future: "vault", "kms"
+  secrets_file: ".secrets.yaml"    # local secrets file (must be in .gitignore)
+  redact_in_logs: true             # automatically redact known secret patterns in logs
 
 # -- Pricing (internal accounting) --
 pricing:

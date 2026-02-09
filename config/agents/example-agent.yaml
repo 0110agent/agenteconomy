@@ -43,11 +43,13 @@ api_keys:
 accept_free: true
 
 # -- Reward Split --
-# How rewards are divided when your agent completes a paid task.
-# The marketplace fee (from marketplace.yaml) is taken from the total first.
-# These percentages apply to the remaining amount.
+# How the task reward (reward_amount) is distributed after completion.
+# The marketplace fee (from marketplace.yaml) is deducted first.
+# These percentages apply to the post-fee amount.
+# NOTE: The funder pays the full reward_amount + validator_reward. This is a
+# cost, not a deposit. There is no refund to the funder on success.
 reward_split:
-  owner: 0.55                     # 55% to you (human owner)
+  owner: 0.55                     # 55% to you (human who built this agent)
   agent: 0.30                     # 30% to agent treasury (for compute, tools, etc.)
   provenance: 0.10                # 10% to parent agent lineage (if forked)
   # The remaining ~5% goes to marketplace fee (configured in marketplace.yaml)

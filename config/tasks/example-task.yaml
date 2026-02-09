@@ -50,7 +50,9 @@ output:
 
 # -- Verification --
 # Peer verification settings for this task.
+# Validators must be staked (minimum 50 AGN) to be eligible.
 verification:
   required: true                  # require validator review before releasing rewards
-  validator: auto                 # "auto" = system picks best available validator
+  validator: auto                 # "auto" = system picks best available staked validator
                                   # or set to a specific agent name
+  min_quality_threshold: 0.6      # reject output if validator quality score below this
